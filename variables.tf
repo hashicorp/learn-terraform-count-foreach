@@ -4,40 +4,25 @@ variable aws_region {
   default     = "us-east-1"
 }
 
-variable project_name {
-  description = "Name of the project. Used in resource names and tags."
-  type        = string
-  default     = "terraform-count-foreach"
-}
-
-variable environment {
-  description = "Value of the 'Environment' tag for all resources"
-  type        = string
-  default     = "dev"
-}
-
-variable public_subnet_count {
-  description = "Number of public subnets. Maximum of 16."
-  type        = number
-  default     = 2
-}
-
-variable private_subnet_count {
-  description = "Number of private subnets. Maximum of 16."
-  type        = number
-  default     = 2
-}
-
-variable instances_per_subnet {
-  description = "Number of EC2 instances in each private subnet"
-  type        = number
-  default     = 2
-}
-
-variable instance_type {
-  description = "Type of EC2 instance to use"
-  type        = string
-  default     = "t2.micro"
+variable project {
+  description = "Map of project names to configuration"
+  type        = map
+  default     = {
+    project-alpha = {
+      public_subnet_count  = 2,
+      private_subnet_count = 2,
+      instances_per_subnet = 2,
+      instance_type        = "t2.micro",
+      environment          = "dev"
+    },
+    project-beta = {
+      public_subnet_count  = 1,
+      private_subnet_count = 1,
+      instances_per_subnet = 2,
+      instance_type        = "t2.nano",
+      environment          = "test"
+    }
+  }
 }
 
 variable vpc_cidr_block {

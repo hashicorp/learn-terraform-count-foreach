@@ -144,6 +144,33 @@ Be sure to reply `yes` when prompted.
 Now the VPC has a configurable number of instances assigned to the private
 subnet and load balancer.
 
+**FIXME**: There's a dependency issue that causes errors. Applying the next step
+without destroying resources first results in:
+
+```
+Error: Cycle: module.vpc.aws_route_table.private[0] (destroy), module.vpc.aws_subnet.private[1] (destroy), module.vpc.aws_subnet.public[1] (destroy), module.vpc.aws_internet_gateway.this[0] (destroy), module.vpc.aws_route_table.private[1] (destroy), module.vpc["project-beta"].aws_route.public_internet_gateway[0], module.vpc["project-alpha"].aws_route.public_internet_gateway[0], module.vpc.aws_route_table.public[0] (destroy), module.vpc["project-beta"].aws_route_table_association.private[0], module.vpc["project-alpha"].aws_route_table_association.private[1], module.vpc["project-beta"].aws_subnet.private[0], module.vpc["project-alpha"].aws_subnet.private[1], module.vpc["project-alpha"].aws_route_table_association.private[0], module.vpc.aws_subnet.private[0] (destroy), module.vpc["project-alpha"].aws_route_table_association.public[0], module.vpc["project-beta"].aws_route_table_association.public[0], module.vpc["project-alpha"].aws_route_table.public[0], module.vpc["project-beta"].aws_route_table.public[0], module.vpc["project-alpha"].aws_route_table_association.public[1], module.vpc.aws_eip.nat[1] (destroy), module.vpc["project-alpha"].aws_route.private_nat_gateway[1], module.vpc["project-beta"].aws_nat_gateway.this[0], module.vpc["project-alpha"].aws_subnet.public[1], module.vpc["project-alpha"].aws_internet_gateway.this[0], module.vpc["project-beta"].aws_internet_gateway.this[0], module.vpc["project-alpha"].aws_nat_gateway.this[1], module.vpc["project-alpha"].aws_route_table.private[0], module.vpc["project-beta"].aws_route.private_nat_gateway[0], module.vpc.aws_nat_gateway.this[0] (destroy), module.vpc.aws_eip.nat[0] (destroy), module.vpc.local.nat_gateway_ips (expand), module.vpc["project-alpha"].aws_subnet.public[0], module.vpc["project-alpha"].aws_nat_gateway.this[0], module.vpc["project-beta"].aws_route_table.private[0], module.vpc["project-alpha"].aws_route.private_nat_gateway[0], module.vpc.aws_nat_gateway.this[1] (destroy), module.vpc.aws_subnet.public[0] (destroy), module.vpc["project-alpha"].aws_subnet.private[0], module.vpc["project-beta"].aws_subnet.public[0], module.vpc.aws_vpc.this[0] (destroy), module.vpc.local.vpc_id (expand), module.vpc["project-alpha"].aws_route_table.private[1]
+```
+
+To work around that, run `terraform destroy` before moving on. This still
+results in an error, but the resources are still destroyed.
+
+```
+Error: Invalid count argument
+
+  on .terraform/modules/vpc/terraform-aws-vpc-2.44.0/main.tf line 334, in resource "aws_subnet" "public":
+ 334:   count = var.create_vpc && length(var.public_subnets) > 0 && (false == var.one_nat_gateway_per_az || length(var.public_subnets) >= length(var.azs)) ? length(var.public_subnets) : 0
+
+The "count" value depends on resource attributes that cannot be determined
+until apply, so Terraform cannot predict how many instances will be created.
+To work around this, use the -target argument to first apply only the
+resources that the count depends on.
+```
+
+I thought that adding an explicit depends_on to the subnets in the vpc module
+would fix this, but I haven't been able to get it to work yet.
+
+**END FIXME**
+
 ## Refactor VPC and load balancer configuration using for_each
 
 Next, refactor the VPC and related configuration so that multiple projects can
@@ -161,7 +188,7 @@ Define a variable for project configuration in `variables.tf`.
 ```hcl
 variable project {
   description = "Map of project names to configuration"
-  type        = map(map)
+  type        = map
   default     = {
     project-alpha = {
       public_subnet_count  = 2,
@@ -223,7 +250,7 @@ or remove these variables from `variables.tf`.
 ```
 
 Now use `for_each` to iterate over this map when creating the VPC and related
-resources.
+resources. Update the VPC block like the following.
 
 ```hcl
 module "vpc" {
@@ -231,14 +258,15 @@ module "vpc" {
   version = "2.44.0"
 
   for_each = var.project
-  
-  cidr = var.vpc_cidr_block
+```
 
+Later in the same block, use `each.value` to refer to the private and public
+subnet count for each project in turn.
+
+```
   azs             = data.aws_availability_zones.available.names
   private_subnets = slice(var.private_subnet_cidr_blocks, 0, each.value.private_subnet_count)
   public_subnets  = slice(var.public_subnet_cidr_blocks, 0, each.value.public_subnet_count)
-
-# ...
 ```
 
 Update the configuration for the security groups as well.
@@ -289,7 +317,7 @@ module "elb_http" {
 
   # Comply with ELB name restrictions 
   # https://docs.aws.amazon.com/elasticloadbalancing/2012-06-01/APIReference/API_CreateLoadBalancer.html
-  name        = substr(replace(join("-", ["lb", each.key, each.value.environment]), /[^a-zA-Z0-9-]/", ""), 0, 32)
+  name        = substr(replace(join("-", ["lb", each.key, each.value.environment]), "/[^a-zA-Z0-9-]/", ""), 0, 32)
   internal    = false
 
   security_groups = [module.lb_security_group[each.key].this_security_group_id]
@@ -339,16 +367,13 @@ Finally, replace the entire contents of `outputs.tf` in your root module with
 the following.
 
 ```hcl
-output "elb_access_log_bucket_names" {
-  description = "Name of ELB S3 bucket which stores access logs"
-  value       = { for p in sort(keys(var.project)) : p => module.s3_bucket_elb_logs[p].this_s3_bucket_id }
-}     
-
-output public_dns_name {
-  description = "Public DNS name of load balancer"
+output public_dns_names {
+  description = "Public DNS names of the load balancers for each project"
   value       = { for p in sort(keys(var.project)) : p => module.elb_http[p].this_elb_dns_name }
 }
 ```
+
+Run `terraform init` to initialize the new module.
 
 Run `terraform apply` to apply these changes. Remember to respond to the
 confirmation prompt with `yes`.
