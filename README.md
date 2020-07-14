@@ -12,7 +12,7 @@ Follow along with the [Learn guide](https://learn.hashicorp.com/FIXME) at HashiC
 ### Clone GitHub repository
 
 ```sh
-git clone ...
+git clone git@github.com:hashicorp/learn-terraform-count-foreach.git
 ```
 
 ### Configure AWS credentials
