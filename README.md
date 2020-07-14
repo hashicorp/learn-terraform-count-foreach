@@ -176,11 +176,11 @@ would fix this, but I haven't been able to get it to work yet.
 Next, refactor the VPC and related configuration so that multiple projects can
 be deployed at the same time.
 
-You can check out the tag `03-use-for-each` to review the new configuration, or
+You can check out the tag `03-use-foreach` to review the new configuration, or
 make the following changes manually.
 
 ```sh
-git checkout 03-use-for-each
+git checkout 03-use-foreach
 ```
 
 Define a variable for project configuration in `variables.tf`.
