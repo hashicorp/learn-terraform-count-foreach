@@ -50,8 +50,9 @@ module "lb_security_group" {
   ingress_cidr_blocks = ["0.0.0.0/0"]
 }
 
-resource "random_id" "lb_id" {
-  byte_length = 4
+resource "random_string" "lb_id" {
+  length  = 4
+  special = false
 }
 
 module "elb_http" {
@@ -62,7 +63,7 @@ module "elb_http" {
 
   # Comply with ELB name restrictions 
   # https://docs.aws.amazon.com/elasticloadbalancing/2012-06-01/APIReference/API_CreateLoadBalancer.html
-  name        = substr(replace(join("-", ["lb", random_id.lb_id.hex, each.key, each.value.environment]), "/[^a-zA-Z0-9-]/", ""), 0, 32)
+  name        = trimsuffix(substr(replace(join("-", ["lb", random_string.lb_id.result, each.key, each.value.environment]), "/[^a-zA-Z0-9-]/", ""), 0, 32), "-")
   internal    = false
 
   security_groups = [module.lb_security_group[each.key].this_security_group_id]
