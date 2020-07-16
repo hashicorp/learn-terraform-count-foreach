@@ -115,8 +115,8 @@ resource "aws_instance" "app" {
 In the `module "elb_http"` block, replace the instance configuration arguments with the following.
 
 ```hcl
-  number_of_instances = length(aws_instance.app.*)
-  instances           = aws_instance.app.*
+  number_of_instances = length(aws_instance.app)
+  instances           = aws_instance.app.*.id
 ```
 
 Now run `terraform apply` to see the changes in action.
