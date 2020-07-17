@@ -352,7 +352,7 @@ module "ec2_instances" {
 }
 ```
 
-You will also need to replace the reference to your instances in the `module "elb_http"` block.
+Next, replace the reference to your instances in the `module "elb_http"` block.
 
 ```hcl
 # ...
