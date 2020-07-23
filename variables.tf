@@ -34,6 +34,12 @@ variable instance_type {
   default     = "t2.micro"
 }
 
+variable instances_per_subnet {
+  description = "Number of EC2 instances in each private subnet"
+  type        = number
+  default     = 2
+}
+
 variable vpc_cidr_block {
   description = "CIDR block for VPC"
   type        = string
