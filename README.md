@@ -89,7 +89,7 @@ resource "aws_instance" "app_b" {
 Rename the resource resource `app_a` to `app`.
 
 ```hcl
-resource "aws_instance" "app_b" {
+resource "aws_instance" "app" {
   ami           = data.aws_ami.amazon_linux.id
   instance_type = var.instance_type
 
