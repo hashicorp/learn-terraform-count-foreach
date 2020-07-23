@@ -23,8 +23,8 @@ module "vpc" {
   cidr = var.vpc_cidr_block
 
   azs             = data.aws_availability_zones.available.names
-  private_subnets = slice(var.private_subnet_cidr_blocks, 0, var.private_subnet_count)
-  public_subnets  = slice(var.public_subnet_cidr_blocks, 0, var.public_subnet_count)
+  private_subnets = slice(var.private_subnet_cidr_blocks, 0, var.private_subnets_per_vpc)
+  public_subnets  = slice(var.public_subnet_cidr_blocks, 0, var.public_subnets_per_vpc)
 
   enable_nat_gateway = true
   enable_vpn_gateway = false
@@ -70,8 +70,8 @@ module "elb_http" {
   security_groups = [module.lb_security_group.this_security_group_id]
   subnets         = module.vpc.public_subnets
 
-  number_of_instances = 2
-  instances           = [aws_instance.app_a.id, aws_instance.app_b.id]
+  number_of_instances = length(aws_instance.app)
+  instances           = aws_instance.app.*.id
 
   listener = [{
     instance_port     = "80"
@@ -99,34 +99,13 @@ data "aws_ami" "amazon_linux" {
   }
 }
 
-resource "aws_instance" "app_a" {
+resource "aws_instance" "app" {
+  count = var.instances_per_subnet * length(module.vpc.private_subnets)
+
   ami           = data.aws_ami.amazon_linux.id
   instance_type = var.instance_type
 
-  subnet_id              = module.vpc.private_subnets[0]
-  vpc_security_group_ids = [module.app_security_group.this_security_group_id]
-
-  user_data = <<-EOF
-    #!/bin/bash
-    sudo yum update -y
-    sudo yum install httpd -y
-    sudo systemctl enable httpd
-    sudo systemctl start httpd
-    echo "<html><body><div>Hello, world!</div></body></html>" > /var/www/html/index.html
-    EOF
-
-  tags = {
-    Terraform   = "true"
-    Project     = var.project_name
-    Environment = var.environment
-  }
-}
-
-resource "aws_instance" "app_b" {
-  ami           = data.aws_ami.amazon_linux.id
-  instance_type = var.instance_type
-
-  subnet_id              = module.vpc.private_subnets[1]
+  subnet_id              = module.vpc.private_subnets[count.index % length(module.vpc.private_subnets)]
   vpc_security_group_ids = [module.app_security_group.this_security_group_id]
 
   user_data = <<-EOF
