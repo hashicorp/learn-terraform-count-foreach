@@ -4,25 +4,34 @@ variable aws_region {
   default     = "us-east-1"
 }
 
-variable project {
-  description = "Map of project names to configuration"
-  type        = map
-  default     = {
-    project-alpha = {
-      public_subnet_count  = 2,
-      private_subnet_count = 2,
-      instances_per_subnet = 2,
-      instance_type        = "t2.micro",
-      environment          = "dev"
-    },
-    project-beta = {
-      public_subnet_count  = 1,
-      private_subnet_count = 1,
-      instances_per_subnet = 2,
-      instance_type        = "t2.nano",
-      environment          = "test"
-    }
-  }
+variable project_name {
+  description = "Name of the project. Used in resource names and tags."
+  type        = string
+  default     = "client-webapp"
+}
+
+variable environment {
+  description = "Value of the 'Environment' tag."
+  type        = string
+  default     = "dev"
+}
+
+variable public_subnets_per_vpc {
+  description = "Number of public subnets. Maximum of 16."
+  type        = number
+  default     = 2
+}
+
+variable private_subnets_per_vpc {
+  description = "Number of private subnets. Maximum of 16."
+  type        = number
+  default     = 2
+}
+
+variable instance_type {
+  description = "Type of EC2 instance to use."
+  type        = string
+  default     = "t2.micro"
 }
 
 variable vpc_cidr_block {
