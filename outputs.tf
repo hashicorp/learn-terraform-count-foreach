@@ -10,5 +10,5 @@ output vpc_arn {
 
 output instance_ids {
   description = "IDs of EC2 instances"
-  value       = [aws_instance.app_a.id, aws_instance.app_b.id]
+  value       = aws_instance.app.*.id
 }
