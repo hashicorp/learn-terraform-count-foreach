@@ -1,46 +1,46 @@
-variable aws_region {
+variable "aws_region" {
   description = "AWS region"
   type        = string
   default     = "us-east-1"
 }
 
-variable project_name {
+variable "project_name" {
   description = "Name of the project. Used in resource names and tags."
   type        = string
   default     = "client-webapp"
 }
 
-variable environment {
+variable "environment" {
   description = "Value of the 'Environment' tag."
   type        = string
   default     = "dev"
 }
 
-variable public_subnets_per_vpc {
+variable "public_subnets_per_vpc" {
   description = "Number of public subnets. Maximum of 16."
   type        = number
   default     = 2
 }
 
-variable private_subnets_per_vpc {
+variable "private_subnets_per_vpc" {
   description = "Number of private subnets. Maximum of 16."
   type        = number
   default     = 2
 }
 
-variable instance_type {
+variable "instance_type" {
   description = "Type of EC2 instance to use."
   type        = string
   default     = "t2.micro"
 }
 
-variable vpc_cidr_block {
+variable "vpc_cidr_block" {
   description = "CIDR block for VPC"
   type        = string
   default     = "10.0.0.0/16"
 }
 
-variable public_subnet_cidr_blocks {
+variable "public_subnet_cidr_blocks" {
   description = "Available cidr blocks for public subnets"
   type        = list(string)
   default = [
@@ -63,7 +63,7 @@ variable public_subnet_cidr_blocks {
   ]
 }
 
-variable private_subnet_cidr_blocks {
+variable "private_subnet_cidr_blocks" {
   description = "Available cidr blocks for private subnets"
   type        = list(string)
   default = [
