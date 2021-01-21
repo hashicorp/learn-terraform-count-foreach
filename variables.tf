@@ -1,13 +1,13 @@
-variable aws_region {
+variable "aws_region" {
   description = "AWS region"
   type        = string
   default     = "us-east-1"
 }
 
-variable project {
+variable "project" {
   description = "Map of project names to configuration."
-  type        = map
-  default     = {
+  type        = map(any)
+  default = {
     client-webapp = {
       public_subnets_per_vpc  = 2,
       private_subnets_per_vpc = 2,
@@ -25,13 +25,13 @@ variable project {
   }
 }
 
-variable vpc_cidr_block {
+variable "vpc_cidr_block" {
   description = "CIDR block for VPC"
   type        = string
   default     = "10.0.0.0/16"
 }
 
-variable public_subnet_cidr_blocks {
+variable "public_subnet_cidr_blocks" {
   description = "Available cidr blocks for public subnets"
   type        = list(string)
   default = [
@@ -54,7 +54,7 @@ variable public_subnet_cidr_blocks {
   ]
 }
 
-variable private_subnet_cidr_blocks {
+variable "private_subnet_cidr_blocks" {
   description = "Available cidr blocks for private subnets"
   type        = list(string)
   default = [
