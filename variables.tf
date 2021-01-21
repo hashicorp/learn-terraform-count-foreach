@@ -6,8 +6,8 @@ variable "aws_region" {
 
 variable "project" {
   description = "Map of project names to configuration"
-  type        = map
-  default     = {
+  type        = map(any)
+  default = {
     project-alpha = {
       public_subnet_count  = 2,
       private_subnet_count = 2,
