@@ -1,13 +1,3 @@
-terraform {
-  required_version = ">= 0.13.0"
-  required_providers {
-    aws = {
-      source  = "hashicorp/aws"
-      version = "2.69.0"
-    }
-  }
-}
-
 provider "aws" {
   region  = var.aws_region
 }
@@ -18,7 +8,7 @@ data "aws_availability_zones" "available" {
 
 module "vpc" {
   source  = "terraform-aws-modules/vpc/aws"
-  version = "2.44.0"
+  version = "3.14.0"
 
   cidr = var.vpc_cidr_block
 
@@ -32,7 +22,7 @@ module "vpc" {
 
 module "app_security_group" {
   source  = "terraform-aws-modules/security-group/aws//modules/web"
-  version = "3.12.0"
+  version = "4.9.0"
 
   name        = "web-server-sg-${var.project_name}-${var.environment}"
   description = "Security group for web-servers with HTTP ports open within VPC"
@@ -43,7 +33,7 @@ module "app_security_group" {
 
 module "lb_security_group" {
   source  = "terraform-aws-modules/security-group/aws//modules/web"
-  version = "3.12.0"
+  version = "4.9.0"
 
   name = "load-balancer-sg-${var.project_name}-${var.environment}"
 
@@ -60,7 +50,7 @@ resource "random_string" "lb_id" {
 
 module "elb_http" {
   source  = "terraform-aws-modules/elb/aws"
-  version = "2.4.0"
+  version = "3.0.1"
 
   # Comply with ELB name restrictions 
   # https://docs.aws.amazon.com/elasticloadbalancing/2012-06-01/APIReference/API_CreateLoadBalancer.html
