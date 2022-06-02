@@ -1,9 +1,14 @@
 provider "aws" {
-  region  = var.aws_region
+  region = var.aws_region
 }
 
 data "aws_availability_zones" "available" {
   state = "available"
+
+  filter {
+    name   = "zone-type"
+    values = ["availability-zone"]
+  }
 }
 
 module "vpc" {
@@ -18,6 +23,8 @@ module "vpc" {
 
   enable_nat_gateway = true
   enable_vpn_gateway = false
+
+  map_public_ip_on_launch = false
 }
 
 module "app_security_group" {
@@ -57,7 +64,7 @@ module "elb_http" {
   name     = trimsuffix(substr(replace(join("-", ["lb", random_string.lb_id.result, var.project_name, var.environment]), "/[^a-zA-Z0-9-]/", ""), 0, 32), "-")
   internal = false
 
-  security_groups = [module.lb_security_group.this_security_group_id]
+  security_groups = [module.lb_security_group.security_group_id]
   subnets         = module.vpc.public_subnets
 
   number_of_instances = 2
@@ -126,7 +133,6 @@ resource "aws_instance" "app_b" {
     sudo amazon-linux-extras enable httpd_modules
     sudo yum install httpd -y
     sudo systemctl enable httpd
-    sudo systemctl start httpd
     echo "<html><body><div>Hello, world!</div></body></html>" > /var/www/html/index.html
     EOF
 
