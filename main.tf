@@ -1,22 +1,19 @@
-terraform {
-  required_providers {
-    aws = {
-      source = "hashicorp/aws"
-    }
-  }
-}
-
 provider "aws" {
   region = var.aws_region
 }
 
 data "aws_availability_zones" "available" {
   state = "available"
+
+  filter {
+    name   = "zone-type"
+    values = ["availability-zone"]
+  }
 }
 
 module "vpc" {
   source  = "terraform-aws-modules/vpc/aws"
-  version = "2.66.0"
+  version = "3.14.0"
 
   cidr = var.vpc_cidr_block
 
@@ -26,11 +23,13 @@ module "vpc" {
 
   enable_nat_gateway = true
   enable_vpn_gateway = false
+
+  map_public_ip_on_launch = false
 }
 
 module "app_security_group" {
   source  = "terraform-aws-modules/security-group/aws//modules/web"
-  version = "3.17.0"
+  version = "4.9.0"
 
   name        = "web-server-sg-${var.project_name}-${var.environment}"
   description = "Security group for web-servers with HTTP ports open within VPC"
@@ -41,7 +40,7 @@ module "app_security_group" {
 
 module "lb_security_group" {
   source  = "terraform-aws-modules/security-group/aws//modules/web"
-  version = "3.17.0"
+  version = "4.9.0"
 
   name = "load-balancer-sg-${var.project_name}-${var.environment}"
 
@@ -58,14 +57,14 @@ resource "random_string" "lb_id" {
 
 module "elb_http" {
   source  = "terraform-aws-modules/elb/aws"
-  version = "2.4.0"
+  version = "3.0.1"
 
   # Comply with ELB name restrictions 
   # https://docs.aws.amazon.com/elasticloadbalancing/2012-06-01/APIReference/API_CreateLoadBalancer.html
   name     = trimsuffix(substr(replace(join("-", ["lb", random_string.lb_id.result, var.project_name, var.environment]), "/[^a-zA-Z0-9-]/", ""), 0, 32), "-")
   internal = false
 
-  security_groups = [module.lb_security_group.this_security_group_id]
+  security_groups = [module.lb_security_group.security_group_id]
   subnets         = module.vpc.public_subnets
 
   number_of_instances = length(aws_instance.app)
@@ -104,7 +103,7 @@ resource "aws_instance" "app" {
   instance_type = var.instance_type
 
   subnet_id              = module.vpc.private_subnets[0]
-  vpc_security_group_ids = [module.app_security_group.this_security_group_id]
+  vpc_security_group_ids = [module.app_security_group.security_group_id]
 
   user_data = <<-EOF
     #!/bin/bash
