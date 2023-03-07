@@ -1,3 +1,6 @@
+# Copyright (c) HashiCorp, Inc.
+# SPDX-License-Identifier: MPL-2.0
+
 variable instance_count {
   description = "Number of EC2 instances to deploy"
   type        = number
